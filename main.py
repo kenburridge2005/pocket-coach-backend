@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date
 import openai
+import base64
 
 app = FastAPI()
 openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -167,4 +168,29 @@ def get_ai_feedback(user_id: str):
 
 @app.get("/ai/prediction/{user_id}")
 def get_progress_prediction(user_id: str):
-    return {"message": "At this rate, you’ll hit your goal in 6 weeks."}
+    return {"message": "At this rate, you'll hit your goal in 6 weeks."}
+
+@app.post("/analyze/photos")
+async def analyze_photos(front: UploadFile = File(...), back: UploadFile = File(...)):
+    front_bytes = await front.read()
+    back_bytes = await back.read()
+    prompt = (
+        "You are a brutally honest fitness coach. Given these front and back body photos, estimate the person's body fat percentage, list their strong and weak points, and give direct, no-nonsense feedback. Do not sugarcoat. Be specific and realistic."
+    )
+    # Encode images as base64 data URLs
+    front_b64 = base64.b64encode(front_bytes).decode()
+    back_b64 = base64.b64encode(back_bytes).decode()
+    messages = [
+        {"role": "system", "content": prompt},
+        {"role": "user", "content": [
+            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{front_b64}"}},
+            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{back_b64}"}}
+        ]}
+    ]
+    response = openai_client.chat.completions.create(
+        model="gpt-4-vision-preview",
+        messages=messages,
+        max_tokens=500,
+    )
+    critique = response.choices[0].message.content
+    return {"critique": critique} 
