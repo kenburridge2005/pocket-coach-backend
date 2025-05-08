@@ -155,4 +155,39 @@ def get_ai_feedback(user_id: str):
 @app.get("/ai/prediction/{user_id}")
 def get_progress_prediction(user_id: str):
     return {"message": "At this rate, you’ll hit your goal in 6 weeks."}
-    
+    import os
+import openai
+from fastapi import FastAPI, UploadFile, File
+from pydantic import BaseModel
+from typing import List, Dict, Optional
+from datetime import date
+
+app = FastAPI()
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# ... (your other endpoints and models)
+
+class MealPlanRequest(BaseModel):
+    user_id: str
+    goal: str
+    dietary_preferences: List[str] = []
+    allergies: List[str] = []
+
+@app.post("/mealplan/ai")
+def generate_meal_plan_ai(request: MealPlanRequest):
+    prompt = (
+        f"Create a 1-day meal plan for someone whose goal is {request.goal}. "
+        f"Dietary preferences: {', '.join(request.dietary_preferences) or 'none'}. "
+        f"Allergies: {', '.join(request.allergies) or 'none'}. "
+        "List meals with names, calories, and a short description."
+    )
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # or "gpt-4" if you have access
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=500,
+        temperature=0.7,
+    )
+    return {"plan": response.choices[0].message["content"]}
+
+# You can do the same for /workoutplan/ai
