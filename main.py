@@ -1,5 +1,6 @@
-import os
-import openai
+  import os
+  import openai
+  openai.api_key = os.getenv("OPENAI_API_KEY")
 from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 from typing import List, Dict, Optional
