@@ -166,3 +166,21 @@ def get_ai_feedback(user_id: str):
 @app.get("/ai/prediction/{user_id}")
 def get_progress_prediction(user_id: str):
     return {"message": "At this rate, you’ll hit your goal in 6 weeks."}
+@app.post("/mealplan/ai")
+def generate_meal_plan_ai(request: MealPlanRequest):
+    prompt = (
+        f"Create a 1-day meal plan for someone whose goal is {request.goal}. "
+        f"Dietary preferences: {', '.join(request.dietary_preferences) or 'none'}. "
+        f"Allergies: {', '.join(request.allergies) or 'none'}. "
+        "List meals with names, calories, and a short description."
+    )
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=500,
+            temperature=0.7,
+        )
+        return {"plan": response.choices[0].message["content"]}
+    except Exception as e:
+        return {"error": str(e)}
