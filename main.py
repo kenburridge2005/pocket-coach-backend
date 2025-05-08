@@ -1,12 +1,12 @@
 import os
-import openai
 from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
-from typing import List, Dict, Optional
+from typing import List, Optional
 from datetime import date
+import openai
 
 app = FastAPI()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.get("/")
 def read_root():
@@ -28,7 +28,7 @@ class UserProfile(BaseModel):
     experience: str
     split: str
     style: str
-    equipment: str
+    equipment: List[str] = []
     body_scan: Optional[str] = None
 
 @app.post("/user")
@@ -73,13 +73,13 @@ def generate_meal_plan_ai(request: MealPlanRequest):
         "List meals with names, calories, and a short description."
     )
     try:
-        response = openai.ChatCompletion.create(
+        response = openai_client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=500,
             temperature=0.7,
         )
-        return {"plan": response.choices[0].message["content"]}
+        return {"plan": response.choices[0].message.content}
     except Exception as e:
         return {"error": str(e)}
 
@@ -91,7 +91,7 @@ class WorkoutPlanRequest(BaseModel):
     experience: str
     split: str
     style: str
-    equipment: str
+    equipment: List[str] = []
     body_scan: Optional[str] = None
 
 @app.post("/workoutplan")
