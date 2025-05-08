@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from typing import List, Dict
 
 app = FastAPI()
 
@@ -7,25 +8,7 @@ app = FastAPI()
 def read_root():
     return {"message": "Pocket Coach API is running!"}
 
-class UserProfile(BaseModel):
-    name: str
-    age: int
-    gender: str
-    # Add more fields as needed
-
-@app.post("/user")
-def create_user(profile: UserProfile):
-    # For now, just echo back the data
-    return profile
-from fastapi import FastAPI
-from pydantic import BaseModel
-
-app = FastAPI()
-
-@app.get("/")
-def read_root():
-    return {"message": "Pocket Coach API is running!"}
-
+# --- User Profile ---
 class UserProfile(BaseModel):
     name: str
     age: int
@@ -39,11 +22,11 @@ def create_user(profile: UserProfile):
 class MealPlanRequest(BaseModel):
     user_id: str
     goal: str
-    dietary_preferences: list[str] = []
-    allergies: list[str] = []
+    dietary_preferences: List[str] = []
+    allergies: List[str] = []
 
 class MealPlan(BaseModel):
-    days: list[dict]  # e.g., [{"day": "Monday", "meals": [...]}, ...]
+    days: List[Dict]  # e.g., [{"day": "Monday", "meals": [...]}, ...]
 
 @app.post("/mealplan")
 def generate_meal_plan(request: MealPlanRequest):
@@ -55,7 +38,11 @@ def generate_meal_plan(request: MealPlanRequest):
                 {"name": "Chicken Salad", "calories": 500},
                 {"name": "Grilled Salmon", "calories": 600}
             ]},
-            # ...more days
+            {"day": "Tuesday", "meals": [
+                {"name": "Greek Yogurt", "calories": 200},
+                {"name": "Turkey Sandwich", "calories": 450},
+                {"name": "Stir Fry", "calories": 550}
+            ]}
         ]
     }
 
@@ -67,4 +54,20 @@ class WorkoutPlanRequest(BaseModel):
     experience: str
 
 class WorkoutPlan(BaseModel):
-    days: list[dict]  #
+    days: List[Dict]  # e.g., [{"day": "Monday", "workout": [...]}, ...]
+
+@app.post("/workoutplan")
+def generate_workout_plan(request: WorkoutPlanRequest):
+    # Mocked workout plan
+    return {
+        "days": [
+            {"day": "Monday", "workout": [
+                {"exercise": "Squat", "sets": 3, "reps": 10},
+                {"exercise": "Push-up", "sets": 3, "reps": 15}
+            ]},
+            {"day": "Tuesday", "workout": [
+                {"exercise": "Deadlift", "sets": 3, "reps": 8},
+                {"exercise": "Pull-up", "sets": 3, "reps": 8}
+            ]}
+        ]
+    }
