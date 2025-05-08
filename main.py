@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
+from datetime import date
 
 app = FastAPI()
 
@@ -10,23 +11,39 @@ def read_root():
 
 # --- User Profile ---
 class UserProfile(BaseModel):
+    user_id: str
     name: str
     age: int
     gender: str
+    height: float
+    weight: float
+    goal: str
+    activity_level: str
+    dietary_preferences: List[str] = []
+    allergies: List[str] = []
+    meal_frequency: str
+    experience: str
+    split: str
+    style: str
+    equipment: str
+    body_scan: Optional[str] = None
 
 @app.post("/user")
 def create_user(profile: UserProfile):
+    # In production, save to DB
     return profile
 
-# --- Meal Plan Endpoint ---
+@app.get("/user/{user_id}")
+def get_user(user_id: str):
+    # In production, fetch from DB
+    return {"user_id": user_id, "mock": True}
+
+# --- Meal Plan ---
 class MealPlanRequest(BaseModel):
     user_id: str
     goal: str
     dietary_preferences: List[str] = []
     allergies: List[str] = []
-
-class MealPlan(BaseModel):
-    days: List[Dict]  # e.g., [{"day": "Monday", "meals": [...]}, ...]
 
 @app.post("/mealplan")
 def generate_meal_plan(request: MealPlanRequest):
@@ -46,15 +63,16 @@ def generate_meal_plan(request: MealPlanRequest):
         ]
     }
 
-# --- Workout Plan Endpoint ---
+# --- Workout Plan ---
 class WorkoutPlanRequest(BaseModel):
     user_id: str
     goal: str
     frequency: int
     experience: str
-
-class WorkoutPlan(BaseModel):
-    days: List[Dict]  # e.g., [{"day": "Monday", "workout": [...]}, ...]
+    split: str
+    style: str
+    equipment: str
+    body_scan: Optional[str] = None
 
 @app.post("/workoutplan")
 def generate_workout_plan(request: WorkoutPlanRequest):
@@ -71,3 +89,70 @@ def generate_workout_plan(request: WorkoutPlanRequest):
             ]}
         ]
     }
+
+# --- Weight/Progress Tracking ---
+class WeightEntry(BaseModel):
+    user_id: str
+    date: date
+    weight: float
+
+@app.post("/progress/weight")
+def log_weight(entry: WeightEntry):
+    # In production, save to DB
+    return entry
+
+@app.get("/progress/weight/{user_id}")
+def get_weight_history(user_id: str):
+    # In production, fetch from DB
+    return [
+        {"date": "2024-05-01", "weight": 180},
+        {"date": "2024-05-02", "weight": 179.5},
+        {"date": "2024-05-03", "weight": 179}
+    ]
+
+# --- Measurement Tracking ---
+class MeasurementEntry(BaseModel):
+    user_id: str
+    date: date
+    waist: Optional[float] = None
+    chest: Optional[float] = None
+    hips: Optional[float] = None
+    arms: Optional[float] = None
+    legs: Optional[float] = None
+
+@app.post("/progress/measurements")
+def log_measurements(entry: MeasurementEntry):
+    # In production, save to DB
+    return entry
+
+@app.get("/progress/measurements/{user_id}")
+def get_measurement_history(user_id: str):
+    # In production, fetch from DB
+    return [
+        {"date": "2024-05-01", "waist": 32, "chest": 40},
+        {"date": "2024-05-02", "waist": 31.8, "chest": 40.2}
+    ]
+
+# --- Progress Photos ---
+@app.post("/progress/photo")
+async def upload_progress_photo(user_id: str, file: UploadFile = File(...)):
+    # In production, save file and link to user
+    return {"filename": file.filename, "user_id": user_id}
+
+@app.get("/progress/photos/{user_id}")
+def get_progress_photos(user_id: str):
+    # In production, fetch from DB
+    return [
+        {"date": "2024-05-01", "url": "https://example.com/photo1.jpg"},
+        {"date": "2024-05-08", "url": "https://example.com/photo2.jpg"}
+    ]
+
+# --- Stubs for AI/Feedback/Advanced Features ---
+@app.get("/ai/feedback/{user_id}")
+def get_ai_feedback(user_id: str):
+    return {"message": "Great consistency! Increasing upper body volume next week."}
+
+@app.get("/ai/prediction/{user_id}")
+def get_progress_prediction(user_id: str):
+    return {"message": "At this rate, you’ll hit your goal in 6 weeks."}
+    
