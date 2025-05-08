@@ -1,7 +1,7 @@
-   from fastapi import FastAPI
+from fastapi import FastAPI
 
-   app = FastAPI()
+app = FastAPI()
 
-   @app.get("/")
-   def read_root():
-       return {"message": "Pocket Coach API is running!"}
+@app.get("/")
+def read_root():
+    return {"message": "Pocket Coach API is running!"}
