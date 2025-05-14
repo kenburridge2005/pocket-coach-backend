@@ -194,3 +194,46 @@ async def analyze_photos(front: UploadFile = File(...), back: UploadFile = File(
     )
     critique = response.choices[0].message.content
     return {"critique": critique} 
+from fastapi import HTTPException
+
+@app.post("/analyze/photos")
+async def analyze_photos(front: UploadFile = File(...), back: UploadFile = File(...)):
+    try:
+        # Read the uploaded images
+        front_bytes = await front.read()
+        back_bytes = await back.read()
+
+        # Encode images as base64
+        front_b64 = base64.b64encode(front_bytes).decode()
+        back_b64 = base64.b64encode(back_bytes).decode()
+
+        # Prepare the prompt and messages
+        prompt = (
+            "You are a brutally honest fitness coach. Given these front and back body photos, "
+            "estimate the person's body fat percentage, list their strong and weak points, and give direct, "
+            "no-nonsense feedback. Do not sugarcoat. Be specific and realistic."
+        )
+        messages = [
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": [
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{front_b64}"}},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{back_b64}"}}
+            ]}
+        ]
+
+        # Call OpenAI with the correct model name
+        response = openai_client.chat.completions.create(
+            model="gpt-4-vision",  # <-- UPDATED MODEL NAME
+            messages=messages,
+            max_tokens=500,
+        )
+        critique = response.choices[0].message.content
+        return {"critique": critique}
+
+    except openai.NotFoundError:
+        raise HTTPException(
+            status_code=500,
+            detail="OpenAI model not found or deprecated. Please update the model name."
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
